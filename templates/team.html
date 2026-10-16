@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}{{ team }} · Env Vault{% endblock %}
+{% block body_attrs %}data-team="{{ team }}"{% endblock %}
+
+{% block topbar %}
+  <span class="team-name">/{{ team }}</span>
+  {% if mode == "files" %}
+  <div class="topbar-actions">
+    <form method="post" action="{{ url_for('team_rotate', team=team) }}"
+          onsubmit="return confirm('Rotate the token? Jenkins must be updated with the new one.')">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <button class="ghost">Rotate token</button>
+    </form>
+    <form method="post" action="{{ url_for('team_logout', team=team) }}">
+      <button class="ghost">Log out</button>
+    </form>
+  </div>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+{% if mode == "create" %}
+<section class="card narrow">
+  <h1>Create team <code>{{ team }}</code></h1>
+  <p class="muted">This team doesn't exist yet. Creating it generates an access token that is shown only once.</p>
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+  <form method="post" action="{{ url_for('team_create', team=team) }}" class="stack">
+    {% if admin_required %}
+    <label>Admin token <input type="password" name="admin_token" required autocomplete="off"></label>
+    {% endif %}
+    <button type="submit">Create team</button>
+  </form>
+</section>
+
+{% elif mode == "login" %}
+<section class="card narrow">
+  <h1>Unlock <code>{{ team }}</code></h1>
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+  <form method="post" action="{{ url_for('team_login', team=team) }}" class="stack">
+    <label>Team token <input type="password" name="token" required autofocus autocomplete="off"></label>
+    <button type="submit">Unlock</button>
+  </form>
+</section>
+
+{% else %}
+{% if new_token %}
+<section class="card notice">
+  <h2>Your team token</h2>
+  <p>Copy it now; it won't be shown again. Store it in Jenkins as a <b>Secret text</b> credential (<code>vault-token</code>).</p>
+  <div class="row">
+    <input id="new-token" value="{{ new_token }}" readonly>
+    <button type="button" data-copy="#new-token">Copy</button>
+  </div>
+  <p class="muted">Jenkins <code>vault-url</code>: <code id="team-url"></code></p>
+</section>
+{% endif %}
+
+<section class="card">
+  <div class="card-head">
+    <h2>Env files</h2>
+    <a class="button ghost" href="{{ url_for('api_bundle', team=team) }}">Download all (.tar.gz)</a>
+  </div>
+  <table id="file-table">
+    <thead><tr><th>Path</th><th>Updated</th><th></th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <p id="empty" class="muted" hidden>No files yet. Drop some below.</p>
+</section>
+
+<section class="card">
+  <div id="dropzone" class="dropzone">
+    <p><b>Drag &amp; drop</b> one or more env files here</p>
+    <p class="muted">or <label class="link">browse<input id="file-input" type="file" multiple hidden></label>
+      · or <button type="button" class="link" id="new-file">paste a new file</button></p>
+  </div>
+  <div id="editors"></div>
+</section>
+
+<template id="editor-tpl">
+  <div class="editor card inner">
+    <div class="row">
+      <input class="path" placeholder="k8s/base/secrets.env" spellcheck="false">
+      <button type="button" class="save">Save</button>
+      <button type="button" class="ghost close">Close</button>
+    </div>
+    <textarea class="content" spellcheck="false" placeholder="KEY=value"></textarea>
+    <p class="status muted"></p>
+  </div>
+</template>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if mode == "files" %}
+<script>window.VAULT = { team: {{ team|tojson }}, csrf: {{ csrf|tojson }} };</script>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+{% endif %}
+{% endblock %}

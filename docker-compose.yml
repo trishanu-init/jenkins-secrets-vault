@@ -1,0 +1,25 @@
+services:
+  vault:
+    build: .
+    image: secretmgmt:latest
+    container_name: secretmgmt
+    env_file: .env
+    ports:
+      - "8097:8097"
+    restart: unless-stopped
+
+  # Optional throwaway Postgres for local testing:
+  #   docker compose --profile localdb up -d --build
+  # and set DATABASE_URL=postgresql+psycopg2://vault:vault@db:5432/secret_mgmt_leap in .env
+  db:
+    image: postgres:16
+    profiles: ["localdb"]
+    environment:
+      POSTGRES_USER: vault
+      POSTGRES_PASSWORD: vault
+      POSTGRES_DB: secret_mgmt_leap
+    volumes:
+      - vault-db:/var/lib/postgresql/data
+
+volumes:
+  vault-db:

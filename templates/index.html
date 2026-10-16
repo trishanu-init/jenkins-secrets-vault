@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card narrow">
+  <h1>Open a team vault</h1>
+  <p class="muted">Each team gets its own URL, e.g. <code>/team3</code>, and its own access token.</p>
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+  <form method="post" class="row">
+    <input name="team" placeholder="team3" pattern="[a-zA-Z0-9][a-zA-Z0-9-]*" required autofocus>
+    <button type="submit">Go</button>
+  </form>
+</section>
+{% endblock %}
